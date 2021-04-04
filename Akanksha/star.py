@@ -2,37 +2,52 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.constants as spc
 
-'''
-Definfining constants here. Taken from scipy.constants
-'''
+######################################### Constants taken from scipy.constants ###################################
 
+# all in SI units
 G = spc.G
 c = spc.c
 hbar = spc.hbar
 k = spc.k
 mp = spc.proton_mass
+me = spc.electron_mass
+sigma_sb = spc.sigma
 
+########################################### Definfing constants required #########################################
+
+#all in SI units
+Msun = 1.989e30
+a = 4*sigma_sb/c
+gamma = 5.0/3.0 #The adiabatic index has a value γ = 5/3 for simple atomic gases and fully ionized gases.
+'''
+check: is gamma value correct?
+'''
+X, Y, Z = 0.734, 0.250, 0.016 #Values taken from Foundations of Astrophysics.
+'''
+check X, Y, Z values
+'''
 mu = 2*X + 0.75*Y + 0.5*Z
-'''
-To Do: Need to figure out what X, Y and Z are.
-'''
-
-'''
-A note in general -  I have not defined some constants here.
-'''
 
 class star(object):
-    def __init__(self, r0, rho_c, T_c):
+    def __init__(self, r0, rho_c, T_c, step_size):
 
         '''
         Given r0, rho_c, T_c calculate M0 and L0
         M0 - Initial Mass
         L0 - Initial Luminosity
+        tau0 - Initial optical depth
         '''
-        M0 = (4.0/3.0)*np.pi*r0**3*rho_c
 
-        L0 = M0*self.epsilon(rho_c, T_c)
+        self.M0 = (4.0/3.0)*np.pi*r0**3*rho_c
+        self.L0 = self.M0*self.epsilon(rho_c, T_c)
+        self.tau0 = self.kappa(rho_c,T_c)*rho_c
+        self.r0 = r0
+        self.rho_c = rho_c
+        self.T_c = T_c
+        self.step_size = step_size
 
+
+################################################ Below are DEs required to solve ###################################
 
     def dpdr(self, r, rho, T, M, L):
 
@@ -42,9 +57,6 @@ class star(object):
 
         return -(G*M*rho/r**2 + self.dPdT(rho, T)*self.dTdr(r, rho, T, M, L))/self.dPdp(rho, T)
 
-    '''
-    Below are DE required to solve
-    '''
 
     def dTdr(self, r, rho, T, M, L):
 
@@ -55,11 +67,6 @@ class star(object):
 
         dTdr_rad = 3*self.kappa(rho, T)*L/(16*np.pi*a*c*T**3*r**2)
         dTdr_conv = (1 - 1/gamma)*T*G*M*rho/(self.P(rho, T)*r**2)
-
-        '''
-        To Do: Define gamma
-        To Do: check if c is the speed of light.
-        '''
 
         return -min(dTdr_rad , dTdr_conv)
 
@@ -89,9 +96,7 @@ class star(object):
         return self.kappa(rho, T)*rho
 
 
-    '''
-    Functions to assist in solving above DEs
-    '''
+############################################# Functions to assist in solving DEs ###################################
 
     def epsilon(self, rho, T):
         '''
@@ -103,7 +108,9 @@ class star(object):
         Xcno = 0.03*X
 
         epp = 1.07e-7*rho5*X**2*T6**4
-        ecno = 8.24e-26*rho4*X*Xcno*T6**(19.9)
+        ecno = 8.24e-26*rho5*X*Xcno*T6**(19.9)
+
+        return epp + ecno
 
 
 
@@ -112,10 +119,6 @@ class star(object):
         '''
         Differentiating Pressure equation(eq - 5) wrt T and
         considering rho a constant
-        '''
-
-        '''
-        To Do: Define a
         '''
 
         dPdT_ig = rho*k/(mu*mp)
@@ -169,9 +172,7 @@ class star(object):
 
         return dPdp_nr + dPdp_ig
 
-    '''
-    Test radius limit
-    '''
+################################################### Testing Radius Limit ######################################
 
     def deltau(self, r, rho, T, M, L):
 
@@ -179,8 +180,112 @@ class star(object):
         Opacity limit - to ensure that the radius is far enough
         '''
 
+        return self.kappa(rho, T)*rho**2/abs(self.dpdr(r, rho, T, M, L))
+
+    def tau_lim(self, r, rho, T, M, L):
+
         '''
-        Check: Would this need a conditionality statement here
+        The runge kutta method stops when tau is satisfied
         '''
 
-        return kappa*rho**2/abs(self.dpdr())
+        deltau = self.deltau(r, rho, T, M, L)
+
+        if deltau < 1e-50:
+            return True
+
+        '''
+        introducing mass limit, since some fully radiative trial
+        solutions can erroneously extend to very large radii
+        '''
+
+        if M > 1e3*Msun:
+            return True
+
+        else:
+            print('deltau', deltau)
+            print('M', M)
+            return False
+
+
+################################################### Solving DEs ###################################################
+
+    def runge_kutta(self, y0, r0, h, f):
+
+        '''
+        r0 = initial r value
+        y0 = y(r0) = initial y value
+        h = 'step size'
+        f = 'function'
+        '''
+
+        #print(y0, r0)
+
+        k1 = f(y0,r0)
+        k2 = f(y0 + 0.5*h*k1, r0 + 0.5*h)
+        k3 = f(y0 + 0.5*h*k2, r0 + 0.5*h)
+        k4 = f(y0 + h*k3, r0 + h)
+
+        return y0 + (k1 + 2*k2 + 2*k3 + k4)*h/6, r0+h
+
+    def f(self, y0, r0):
+
+        '''
+        This function takes the y0, r0, values given in the runge kutta method
+        and calculates the dpde, dTdr, dMdr, dLdr, dtaudr values.
+        '''
+
+        rho = y0[0]
+        T = y0[1]
+        M = y0[2]
+        L = y0[3]
+        tau = y[4]
+
+        rho_fun = self.dpdr(r0, rho, T, M, L)
+        T_fun = self.dTdr(r0, rho, T, M, L)
+        M_fun = self.dMdr(r0, rho)
+        L_fun = self.dLdr(r0, rho, T)
+        tau_fun = self.dtaudr(rho, T)
+
+        #print('function array', np.array([rho_fun, T_fun, M_fun, L_fun, tau_fun]))
+
+        return np.array([rho_fun, T_fun, M_fun, L_fun, tau_fun])
+
+    def solve_DE(self):
+
+        rho_vals, T_vals, M_vals, L_vals, tau_vals = [], [], [], [], []
+
+        r0 = self.r0
+        init_vals = np.array([self.rho_c, self.T_c, self.M0, self.L0, self.tau0])
+
+        func_vals, r = self.runge_kutta(init_vals, r0, step_size, self.f)
+
+        #updating r0 and init values
+        r0 = r
+        init_vals = func_vals
+
+        rho_vals.append(func_vals[0])
+        T_vals.append(func_vals[1])
+        M_vals.append(func_vals[2])
+        L_vals.append(func_vals[3])
+        tau_vals.append(func_vals[4])
+
+        '''
+        Unless the tau limit criteria is met the loop runs
+        '''
+
+        while star_func.tau_lim(r, func_vals[0], func_vals[1], func_vals[2], func_vals[3]) == False:
+
+            func_vals, r = self.runge_kutta(init_vals, r0, step_size, self.f)
+
+            rho_vals.append(func_vals[0])
+            T_vals.append(func_vals[1])
+            M_vals.append(func_vals[2])
+            L_vals.append(func_vals[3])
+            tau_vals.append(func_vals[4])
+
+            #updating r0 and init values
+            init_vals = func_vals
+            r0 = r
+
+
+        return rho_vals, T_vals, M_vals, L_vals, tau_vals
