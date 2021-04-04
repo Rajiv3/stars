@@ -15,7 +15,6 @@ sigma_sb = spc.sigma
 
 ########################################### Definfing constants required #########################################
 
-#all in SI units
 Msun = 1.989e30
 a = 4*sigma_sb/c
 gamma = 5.0/3.0 #The adiabatic index has a value γ = 5/3 for simple atomic gases and fully ionized gases.
@@ -238,7 +237,7 @@ class star(object):
         T = y0[1]
         M = y0[2]
         L = y0[3]
-        tau = y[4]
+        tau = y0[4]
 
         rho_fun = self.dpdr(r0, rho, T, M, L)
         T_fun = self.dTdr(r0, rho, T, M, L)
@@ -257,7 +256,7 @@ class star(object):
         r0 = self.r0
         init_vals = np.array([self.rho_c, self.T_c, self.M0, self.L0, self.tau0])
 
-        func_vals, r = self.runge_kutta(init_vals, r0, step_size, self.f)
+        func_vals, r = self.runge_kutta(init_vals, r0, self.step_size, self.f)
 
         #updating r0 and init values
         r0 = r
@@ -275,7 +274,7 @@ class star(object):
 
         while star_func.tau_lim(r, func_vals[0], func_vals[1], func_vals[2], func_vals[3]) == False:
 
-            func_vals, r = self.runge_kutta(init_vals, r0, step_size, self.f)
+            func_vals, r = self.runge_kutta(init_vals, r0, self.step_size, self.f)
 
             rho_vals.append(func_vals[0])
             T_vals.append(func_vals[1])
