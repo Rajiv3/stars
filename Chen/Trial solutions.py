@@ -38,14 +38,14 @@ def get_remaining_optical_depth(r, rho, T, M, L, kappa, rho_prime, Star=Star()):
 
 def truncate_star(r_values, state_values, return_star=False):
     """
-    Calculates difference between the actual surface luminosity and the surface luminosity (part 2.2.2)
+    Calculates the normalized difference between the actual and the calculated luminosity (part 2.2.2)
     The surface radius is interpolated such that the remaining optical depth from the surface is 2/3.
     Can optionally truncate the given stellar data at the surface of the star and add a final data point for the
     surface of the star, where the temperature is manually set to satisfy the boundary condition.
      r_values: array of radii
      state_values: array containing Rho, T, M, L conrresponding to r_values
-    :param return_star:
-    :return: The fractional surface luminosity error, and optionally the truncated r_values and state_values.
+     
+    Return: The fractional surface luminosity error, and optionally the truncated r_values and state_values.
     """
     tau_infinity = state_values[tau_index, -1]
     surface_index = find_zeros_index(tau_infinity - state_values[tau_index, :] - 2 / 3)
