@@ -1,9 +1,10 @@
+##################################some tool functions##############################
 from scipy.interpolate import interp1d
 from scipy.integrate import solve_ivp
 import numpy as np
 
 #put rho,T,M,L,tau values into an array#
-###############some tool functions need############################
+###############some tool functions needed############################
 def find_zeros_index(x, round_int=False, find_first=True):
     """
     Find the index of zeros in an array
