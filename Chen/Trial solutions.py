@@ -113,8 +113,8 @@ def trial_solution(rho_c, T_c, r_0=100 , rtol=1e-9, atol=None,
 
     # Ending radius is infinity, integration will only be halted via the halt_integration event
     # Not sure what good values for atol and rtol are, but these seem to work well
-    result = solve_ivp(config.get_state_derivative, (r_0, np.inf),
-                                 config.get_initial_conditions(rho_c, T_c, r_0=r_0),
+    result = solve_ivp(Star.get_state_derivative, (r_0, np.inf),
+                                 Star.get_initial_conditions(rho_c, T_c, r_0=r_0),
                                  events=halt_integration, atol=atol, rtol=rtol)
    
     r_values, state_values = result.t, result.y
