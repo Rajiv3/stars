@@ -57,7 +57,7 @@ class Star:
         kappa_value = self.kappa(rho, T)
 
         T_prime_value = self.dTdr (r, rho, T, M, L, kappa_value=kappa_value)
-        rho_prime_value = self.rpdr (r, rho, T, M, L, T_prime_value=T_prime_value)
+        rho_prime_value = self.dpdr (r, rho, T, M, L, T_prime_value=T_prime_value)
         M_prime_value = self.dMdr (r, rho)
         L_prime_value = self.dLdr (r, rho, T, M_prime_value=M_prime_value)
         tau_prime_value = self.dtaudr (rho, T, kappa_value=kappa_value)
