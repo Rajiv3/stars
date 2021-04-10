@@ -18,7 +18,7 @@ R_sun = 696340000
 
 gamma = 5 / 3
 
-rho_index, T_index, M_index, L_index, tau_index = np.arange(5)
+rho_index, T_index, M_index, L_index, tau_index = 0,1,2,3,4
 
 X_default = 0.734
 Z_default = 0.016
