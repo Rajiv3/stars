@@ -64,7 +64,7 @@ class star(object):
         due to convection and radiation
         '''
 
-        dTdr_rad = 3*self.kappa(rho, T)*L/(16*np.pi*a*c*T**3*r**2)
+        dTdr_rad = 3*self.kappa(rho, T)*rho*L/(16*np.pi*a*c*T**3*r**2)
         dTdr_conv = (1 - 1/gamma)*T*G*M*rho/(self.P(rho, T)*r**2)
 
         return -min(dTdr_rad , dTdr_conv)
