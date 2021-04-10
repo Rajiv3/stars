@@ -3,9 +3,7 @@ from scipy.integrate import solve_ivp
 import numpy as np
 
 #put rho,T,M,L,tau values into an array#
-
-rho_index, T_index, M_index, L_index, tau_index = 0,1,2,3,4
-
+###############some tool functions need############################
 def find_zeros_index(x, round_int=False, find_first=True):
     """
     Find the index of zeros in an array
@@ -14,11 +12,9 @@ def find_zeros_index(x, round_int=False, find_first=True):
 
 def interpolate(x, index):
     """
-    Linearly interpolates data at floating point indices within the given array or 2D matrix.
-    :param x: The array or 2D matrix to interpolate from.
-              If x is a matrix, then interpolation is done along the second axis.
-    :param index: The (potentially fractional) index to interpolate at.
-    :return: The interpolated value or (in the case where x is a matrix) array of values.
+    x: The array or 2D matrix to interpolate
+       If x is a matrix, then interpolation is done along the second axis.
+    index: The (potentially fractional) index to interpolate at.
     """
     if len(x.shape) == 1:
         # if x is an array
