@@ -10,7 +10,6 @@ mp = spc.proton_mass
 me = spc.electron_mass
 sigma_sb = spc.sigma
 a = 4*sigma_sb/c
-h_bar = 1.054_571_817e-34 
 
 M_sun = 1.98847e30 
 L_sun = 3.828e26 
@@ -73,12 +72,16 @@ class Star:
         if kappa_value is None:
             kappa_value = self.kappa(rho, T)
         
-        radiative = self.radiative(r, rho, T, L, kappa_value=kappa_value)
-        convective = self.convective(r, rho, T, M)
+        rad = self.radiative(r, rho, T, L, kappa_value=kappa_value)
+        con = self.convective(r, rho, T, M)
         
-        return np.maximum(radiative, convective)
+        return np.maximum(rad, con)
 
-    def  radiative(self, r, rho, T, L, kappa_value=None):
+    def radiative(self, r, rho, T, L, kappa_value=None):
+        """
+        kappa_value could be given, if not, kappa will be calculated with (rho T)
+        """
+        
         if kappa_value is None:
             kappa_value = self.kappa(rho, T)
         return -3 * kappa_value * rho * L / (16 * pi * a * c * T ** 3 * r ** 2)
@@ -87,6 +90,10 @@ class Star:
         return -(1 - 1 / gamma) * T * G * M * rho / (self.P(rho, T) * r ** 2) * (1 + self.Lambda / r) 
 
     def is_convective(self, r, rho, T, M, L, kappa_value=None):
+        """
+        returns True if the star is convection
+        """
+        
         if kappa_value is None:
             kappa_value = self.kappa(rho, T)
         return self.convective(r, rho, T, M) > self.radiative(r, rho, T, L, kappa_value=kappa_value)
