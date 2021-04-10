@@ -6,7 +6,7 @@ import numpy as np
 
 #put rho,T,M,L,tau values into an array#
 
-rho_index, T_index, M_index, L_index, tau_index = 0,1,2,3,4,5
+rho_index, T_index, M_index, L_index, tau_index = 0,1,2,3,4
 
 def find_zeros_index(x, round_int=False, find_first=True):
     """
