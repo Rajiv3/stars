@@ -10,6 +10,7 @@ mp = spc.proton_mass
 me = spc.electron_mass
 sigma_sb = spc.sigma
 a = 4*sigma_sb/c
+h_bar = 1.054_571_817e-34 
 
 M_sun = 1.98847e30 
 L_sun = 3.828e26 
@@ -39,7 +40,7 @@ class Star:
 
     def get_initial_conditions(self, rho_c, T_c, r_0=1):
         
-        M_c = (4 / 3) * pi * r_0 ** 3 * rho_c
+        M_c = (4/3) * pi * r_0**3 * rho_c
         L_c = M_c * self.epsilon(rho_c, T_c)
         kappa_c = self.kappa(rho_c, T_c)
         tau_c = kappa_c * rho_c * r_0
@@ -57,7 +58,7 @@ class Star:
         kappa_value = self.kappa(rho, T)
 
         T_prime_value = self.dTdr (r, rho, T, M, L, kappa_value=kappa_value)
-        rho_prime_value = self.dpdr (r, rho, T, M, L, T_prime_value=T_prime_value)
+        rho_prime_value = self.rpdr (r, rho, T, M, L, T_prime_value=T_prime_value)
         M_prime_value = self.dMdr (r, rho)
         L_prime_value = self.dLdr (r, rho, T, M_prime_value=M_prime_value)
         tau_prime_value = self.dtaudr (rho, T, kappa_value=kappa_value)
@@ -72,28 +73,20 @@ class Star:
         if kappa_value is None:
             kappa_value = self.kappa(rho, T)
         
-        rad = self.radiative(r, rho, T, L, kappa_value=kappa_value)
-        con = self.convective(r, rho, T, M)
+        radiative = self.radiative(r, rho, T, L, kappa_value=kappa_value)
+        convective = self.convective(r, rho, T, M)
         
-        return np.maximum(rad, con)
+        return max(radiative, convective)
 
     def radiative(self, r, rho, T, L, kappa_value=None):
-        """
-        kappa_value could be given, if not, kappa will be calculated with (rho T)
-        """
-        
         if kappa_value is None:
             kappa_value = self.kappa(rho, T)
-        return -3 * kappa_value * rho * L / (16 * pi * a * c * T ** 3 * r ** 2)
+        return -3 * kappa_value*rho*L / (16*pi*a*c*T**3*r** 2)
 
     def convective(self, r, rho, T, M):
-        return -(1 - 1 / gamma) * T * G * M * rho / (self.P(rho, T) * r ** 2) * (1 + self.Lambda / r) 
+        return -(1 - 1/gamma)*T*G*M*rho / (self.P(rho, T)*r** 2) * (1 + self.Lambda/r) 
 
     def is_convective(self, r, rho, T, M, L, kappa_value=None):
-        """
-        returns True if the star is convection
-        """
-        
         if kappa_value is None:
             kappa_value = self.kappa(rho, T)
         return self.convective(r, rho, T, M) > self.radiative(r, rho, T, L, kappa_value=kappa_value)
@@ -125,20 +118,20 @@ class Star:
         return self.P_degeneracy(rho) + self.P_gas(rho, T) + self.P_photon(T)
 
     def P_degeneracy(rho):
-        return (3 * pi ** 2) ** (2 / 3) * h_bar ** 2 / (5 * m_e) * (rho / m_p) ** (5 / 3)
+        return (3*pi**2) ** (2/3) * h_bar** 2 / (5*me) * (rho/mp)**(5/3)
 
     def P_gas(self, rho, T):
-        return rho * k_b * T / (self.mu() * m_p)
+        return rho*k*T / (self.mu() * mp)
 
     def P_photon(T):
-        return (1 / 3) * a * T ** 4
+        return (1/3)*a*T** 4
 
     def dPdp (self, rho, T):
-        return (3 * pi ** 2) ** (2 / 3) * h_bar ** 2 / (3 * m_e * m_p) * (rho / m_p) ** (2 / 3) + \
-               k_b * T / (self.mu() * m_p)
+        return (3*pi**2)**(2/3) * h_bar ** 2/(3*me*mp) * (rho/mp) ** (2/3) + \
+               k*T/ (self.mu()*mp)
 
     def dPdT (self, rho, T):
-        return rho * k / (self.mu() * m_p) + (4 / 3) * a * T ** 3
+        return rho*k / (self.mu()*mp) + (4/3)*a*T** 3
 
     def mu(self):
         return (2 * self.X + 0.75 * self.Y + 0.5 * self.Z) ** -1
@@ -159,12 +152,12 @@ class Star:
         return self.epsilon_pp(rho, T) + self.epsilon_CNO(rho, T)
 
     def epsilon_pp(self, rho, T):
-        return 1.07e-7  * self.X ** 2 * (rho / 10 ** 5) * (T / 10 ** 6) ** 4
+        return 1.07e-7 * self.X**2 * (rho/10**5) * (T/10**6)**4
 
     def epsilon_CNO(self, rho, T, X_CNO=None):
         if X_CNO is None:
             X_CNO = 0.03 * self.X
-        return 8.24e-26 * self.X * X_CNO * (rho / 10 ** 5) * (T / 10 ** 6) ** 19.9
+        return 8.24e-26 * self.X * X_CNO * (rho/1e5) * (T/1e6)**19.9
 
 
     def has_gravity_modifications(self):
@@ -175,6 +168,3 @@ class Star:
         if self.Lambda!= Lambda_default:
             description += r'$\lambda$=' + ('%.2f' % (self.Lambda/ R_sun)) + r'$R_{\odot}$'
         return description
-
-###################################################################################
-    
